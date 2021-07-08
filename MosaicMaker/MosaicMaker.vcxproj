@@ -143,7 +143,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CompositeDlg.cpp" />
     <ClCompile Include="MosaicMaker.cpp" />
+    <ClCompile Include="wxImagePanel.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CompositeDlg.h" />
+    <ClInclude Include="MosaicMaker.h" />
+    <ClInclude Include="wxImagePanel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
