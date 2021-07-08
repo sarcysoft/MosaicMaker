@@ -2,6 +2,7 @@
 
 #include <list>
 #include "CompositeDlg.h"
+#include "GlobalConfig.h"
 
 wxIMPLEMENT_APP(MyApp);
 
@@ -121,7 +122,7 @@ void MyFrame::OnBuild(wxCommandEvent& event)
     wxArrayString items = mListBox->GetStrings();
     if (items.Count() > 0)
     {
-        CompositeDlg dlg;
+        CompositeDlg dlg(items);
         dlg.ShowModal();
     }
 }

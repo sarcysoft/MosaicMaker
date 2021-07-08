@@ -35,5 +35,8 @@
     <ClInclude Include="CompositeDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GlobalConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
