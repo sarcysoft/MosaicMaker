@@ -4,7 +4,6 @@
 #include "CompositeDlg.h"
 #include "GlobalConfig.h"
 
-wxIMPLEMENT_APP(MyApp);
 
 bool MyApp::OnInit()
 {
@@ -25,10 +24,10 @@ MyFrame::MyFrame()
     wxMenu* menuHelp = new wxMenu;
     menuHelp->Append(wxID_ABOUT);
 
-    wxMenuBar* menuBar = new wxMenuBar;
-    menuBar->Append(menuFile, "&File");
-    menuBar->Append(menuHelp, "&Help");
-    SetMenuBar(menuBar);
+    wxMenuBar* menubarMain = new wxMenuBar;
+    menubarMain->Append(menuFile, "&File");
+    menubarMain->Append(menuHelp, "&Help");
+    SetMenuBar(menubarMain);
 
     CreateStatusBar();
     SetStatusText("Welcome to wxWidgets!");
@@ -40,35 +39,35 @@ MyFrame::MyFrame()
     //---------------------------------------------------------
     wxInitAllImageHandlers();
 
-    wxPanel* panel = new wxPanel(this, -1);
+    wxPanel* pnlMain = new wxPanel(this, -1);
 
-    wxBoxSizer* vbox1 = new wxBoxSizer(wxVERTICAL);
-    wxBoxSizer* hbox1 = new wxBoxSizer(wxHORIZONTAL);
-    wxBoxSizer* hbox2 = new wxBoxSizer(wxHORIZONTAL);
-    wxBoxSizer* vbox2 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* vboxMain = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* hboxButtons = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* hboxMain = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* vboxSelection = new wxBoxSizer(wxVERTICAL);
 
-    wxButton* btnBrowse = new wxButton(panel, ID_Browse, wxT("Browse"));
-    hbox1->Add(btnBrowse);
+    wxButton* btnBrowse = new wxButton(pnlMain, ID_Browse, wxT("Browse"));
+    hboxButtons->Add(btnBrowse);
 
-    wxButton* btnBuild = new wxButton(panel, ID_Build, wxT("Build"));
-    hbox1->Add(btnBuild);
+    wxButton* btnBuild = new wxButton(pnlMain, ID_Build, wxT("Build"));
+    hboxButtons->Add(btnBuild);
 
-    vbox1->Add(hbox1, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxBOTTOM, 5);
+    vboxMain->Add(hboxButtons, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxBOTTOM, 5);
 
-    mTreeBrowse = new wxTreeCtrl(panel, ID_BrowseTree);
-    hbox2->Add(mTreeBrowse, 1, wxEXPAND);
+    mTreeBrowse = new wxTreeCtrl(pnlMain, ID_BrowseTree);
+    hboxMain->Add(mTreeBrowse, 1, wxEXPAND);
 
-    mImagePanel = new wxImagePanel(panel);
-    vbox2->Add(mImagePanel, 1, wxEXPAND);
+    mImagePanel = new wxImagePanel(pnlMain);
+    vboxSelection->Add(mImagePanel, 1, wxEXPAND);
 
-    mListBox = new wxListBox(panel, ID_PhotoList);
-    vbox2->Add(mListBox, 1, wxEXPAND);
+    mListBox = new wxListBox(pnlMain, ID_PhotoList);
+    vboxSelection->Add(mListBox, 1, wxEXPAND);
 
-    hbox2->Add(vbox2, 1, wxEXPAND | wxLEFT | wxRIGHT | wxTOP | wxBOTTOM, 5);
+    hboxMain->Add(vboxSelection, 1, wxEXPAND | wxLEFT | wxRIGHT | wxTOP | wxBOTTOM, 5);
 
-    vbox1->Add(hbox2, 1, wxEXPAND | wxLEFT | wxRIGHT | wxTOP | wxBOTTOM, 5);
+    vboxMain->Add(hboxMain, 1, wxEXPAND | wxLEFT | wxRIGHT | wxTOP | wxBOTTOM, 5);
 
-    panel->SetSizer(vbox1);
+    pnlMain->SetSizer(vboxMain);
 
     Centre();
 
@@ -112,8 +111,8 @@ void MyFrame::OnBrowse(wxCommandEvent& event)
         RecurseFolders(root, NULL);
 
         // Expand all the nodes
-        mTreeBrowse->ExpandAll();
-
+        mTreeBrowse->CollapseAll();
+        mTreeBrowse->Expand(mTreeBrowse->GetRootItem());
     }
 }
 
@@ -123,6 +122,15 @@ void MyFrame::OnBuild(wxCommandEvent& event)
     if (items.Count() > 0)
     {
         CompositeDlg dlg(items);
+        wxArrayString importList;
+
+        for (std::map<wxTreeItemId, wxString>::const_iterator it = mFileMap.begin(); it != mFileMap.end(); ++it)
+        {
+            importList.Add(it->second);
+        }
+
+        dlg.SetImportList(importList);
+
         dlg.ShowModal();
     }
 }

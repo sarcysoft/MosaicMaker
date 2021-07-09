@@ -9,5 +9,7 @@ enum
     ID_BrowseTree,
     ID_PhotoList,
 
-    ID_ViewSource
+    ID_ViewSource,
+    ID_MapOutput,
+    ID_BuildOutput
 };

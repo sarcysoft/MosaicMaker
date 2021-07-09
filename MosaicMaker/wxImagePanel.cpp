@@ -2,6 +2,8 @@
 
 #include <wx/wx.h>
 #include <wx/sizer.h>
+#include <wx/image.h>
+#include <wx/mstream.h>
 
 BEGIN_EVENT_TABLE(wxImagePanel, wxPanel)
 // some useful events
@@ -45,12 +47,24 @@ void wxImagePanel::SetNewImage(wxString file, wxBitmapType format)
     if (file != "")
     {
         // load the file... ideally add a check to see if loading was successful
-        image.LoadFile(file, format);
+        mImage.LoadFile(file, format);
         w = -1;
         h = -1;
 
         paintNow();
     }
+}
+
+void wxImagePanel::SetNewImage(Mat image)
+{
+    std::vector<uchar> buf;
+    imencode(".bmp", image, buf);
+    wxMemoryInputStream stream((void*)buf.data(), buf.size());
+    mImage = wxImage(stream, wxBITMAP_TYPE_ANY);
+    w = -1;
+    h = -1;
+
+    paintNow();
 }
 
 /*
@@ -88,22 +102,22 @@ void wxImagePanel::paintNow()
  */
 void wxImagePanel::render(wxDC& dc)
 {
-    if (image.IsOk())
+    if (mImage.IsOk())
     {
         int tempw, temph;
         dc.GetSize(&tempw, &temph);
 
-        double wscale = (double)image.GetWidth() / (double)tempw;
-        double hscale = (double)image.GetHeight() / (double)temph;
+        double wscale = (double)mImage.GetWidth() / (double)tempw;
+        double hscale = (double)mImage.GetHeight() / (double)temph;
 
         double tempScale = (wscale > hscale) ? wscale : hscale;
 
-        int neww = (int)((double)image.GetWidth() / tempScale);
-        int newh = (int)((double)image.GetHeight() / tempScale);
+        int neww = (int)((double)mImage.GetWidth() / tempScale);
+        int newh = (int)((double)mImage.GetHeight() / tempScale);
 
         if (neww != w || newh != h)
         {
-            resized = wxBitmap(image.Scale(neww, newh /*, wxIMAGE_QUALITY_HIGH*/));
+            resized = wxBitmap(mImage.Scale(neww, newh /*, wxIMAGE_QUALITY_HIGH*/));
             w = neww;
             h = newh;
             dc.DrawBitmap(resized, 0, 0, false);

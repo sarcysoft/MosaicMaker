@@ -2,9 +2,16 @@
 #include <wx/wx.h>
 #include <wx/sizer.h>
 
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+
+using namespace cv;
+
 class wxImagePanel : public wxPanel
 {
-    wxImage image;
+    wxImage mImage;
     wxBitmap resized;
     int w, h;
 
@@ -12,6 +19,7 @@ public:
     wxImagePanel(wxPanel* parent, wxString file = "", wxBitmapType format = wxBITMAP_TYPE_JPEG);
 
     void SetNewImage(wxString file = "", wxBitmapType format = wxBITMAP_TYPE_JPEG);
+    void SetNewImage(Mat image);
 
     void paintEvent(wxPaintEvent& evt);
     void paintNow();

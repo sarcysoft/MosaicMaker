@@ -19,10 +19,14 @@ public:
     virtual bool OnInit();
 };
 
+wxIMPLEMENT_APP(MyApp);
+
+
 class MyFrame : public wxFrame
 {
 public:
     MyFrame();
+
 private:
     void OnHello(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
@@ -39,10 +43,9 @@ private:
     void OnListDoubleClick(wxCommandEvent& event);
 
     std::map<wxTreeItemId, wxString> mFileMap;
-    wxTreeCtrl* mTreeBrowse;
 
+    wxTreeCtrl* mTreeBrowse;
     wxImagePanel* mImagePanel;
     wxListBox* mListBox;
+    
 };
-
-
