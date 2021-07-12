@@ -11,7 +11,7 @@
 
 #include "wxImagePanel.h"
 
-#include "wx\bitmap.h"
+#include "wx/fileconf.h"
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
@@ -33,6 +33,18 @@ public:
         r = pData[2];
     }
 
+    wxString GetHashCode()
+    {
+        char hashCode[8];
+        snprintf(hashCode, 8, "#%02x%02x%02x", r, g, b);
+        return wxString(hashCode);
+    }
+
+    void SetFromHashCode(wxString hashCode)
+    {
+        (void)sscanf(hashCode.mb_str(wxConvUTF8), "#%2hhx%2hhx%2hhx", &r, &g, &b);
+    }
+
     uchar r;
     uchar g;
     uchar b;
@@ -51,7 +63,7 @@ class CompositeDlg :
 public:
     CompositeDlg(wxArrayString fileList);
     void SetFileList(wxArrayString fileList);
-    void SetImportList(wxArrayString fileList);
+    void SetImportList(wxString path, wxArrayString fileList);
 
     void OnViewSource(wxCommandEvent& event);
     void OnMapOutput(wxCommandEvent& event);
@@ -72,15 +84,21 @@ private:
 
     Mat LoadMat(std::string path, int zoom = 1);
 
+    wxString mConfigPath;
+
     std::map<std::string, RgbValue> mRgbMap;
 
+    std::mutex mConfigMutex;
+    int mUnsavedConfigs;
+    wxFileConfig* mConfig;
+
     std::mutex mImportMutex;
-    std::queue<std::string> mImportQueue;
+    std::list<std::string> mImportFileList;
 
     std::mutex mBuildMutex;
-    std::queue<std::tuple<int, int, RgbValue>> mBuildInputQueue;
+    std::list<std::tuple<int, int, RgbValue>> mBuildInputList;
     std::map<std::string, std::list<std::tuple<int, int>>> mBuildTileMap;
-    std::queue<BuildTile> mBuildTileQueue;
+    std::list<BuildTile> mBuildTileList;
 
     wxArrayString mFileList;
     wxArrayString mImportList;
@@ -88,6 +106,9 @@ private:
     wxImagePanel* mOutputPanel;
     wxGauge* mProgressBar;
 
+    std::mutex mOutputMutex;
     Mat mOutputMat;
+    int mOutputScale;
+    int mUpdatedOutput;
 };
 

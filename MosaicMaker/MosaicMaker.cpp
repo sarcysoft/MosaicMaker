@@ -105,10 +105,10 @@ void MyFrame::OnBrowse(wxCommandEvent& event)
         mTreeBrowse->DeleteAllItems();
         mFileMap.clear();
 
-        wxString root = dlg.GetPath();
-        root.Replace("%20", " ");
+        mImportPath = dlg.GetPath();
+        mImportPath.Replace("%20", " ");
 
-        RecurseFolders(root, NULL);
+        RecurseFolders(mImportPath, NULL);
 
         // Expand all the nodes
         mTreeBrowse->CollapseAll();
@@ -129,7 +129,7 @@ void MyFrame::OnBuild(wxCommandEvent& event)
             importList.Add(it->second);
         }
 
-        dlg.SetImportList(importList);
+        dlg.SetImportList(mImportPath, importList);
 
         dlg.ShowModal();
     }

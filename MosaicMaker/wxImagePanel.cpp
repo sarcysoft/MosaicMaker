@@ -115,6 +115,8 @@ void wxImagePanel::render(wxDC& dc)
         int neww = (int)((double)mImage.GetWidth() / tempScale);
         int newh = (int)((double)mImage.GetHeight() / tempScale);
 
+        dc.Clear();
+
         if (neww != w || newh != h)
         {
             resized = wxBitmap(mImage.Scale(neww, newh /*, wxIMAGE_QUALITY_HIGH*/));

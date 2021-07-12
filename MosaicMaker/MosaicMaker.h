@@ -8,8 +8,8 @@
 
 #include <map>
 
-#include "wx\treectrl.h"
-#include "wx\filesys.h"
+#include "wx/treectrl.h"
+#include "wx/filesys.h"
 
 #include "wxImagePanel.h"
 
@@ -44,6 +44,7 @@ private:
 
     std::map<wxTreeItemId, wxString> mFileMap;
 
+    wxString mImportPath;
     wxTreeCtrl* mTreeBrowse;
     wxImagePanel* mImagePanel;
     wxListBox* mListBox;
