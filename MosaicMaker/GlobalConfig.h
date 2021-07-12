@@ -11,5 +11,7 @@ enum
 
     ID_ViewSource,
     ID_MapOutput,
-    ID_BuildOutput
+    ID_BuildOutput,
+    ID_SaveOutput,
+    ID_ViewOutput
 };

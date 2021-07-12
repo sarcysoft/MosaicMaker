@@ -4,10 +4,9 @@
 #include <wx/wx.h>
 #endif
 
-#include <queue>
+#include <vector>
 #include <mutex>
 #include <map>
-#include <list>
 
 #include "wxImagePanel.h"
 
@@ -54,7 +53,7 @@ class BuildTile
 {
 public:
     std::string filename;
-    std::list<std::tuple<int, int>> coords;
+    std::vector<std::tuple<int, int>> coords;
 };
 
 class CompositeDlg :
@@ -68,6 +67,8 @@ public:
     void OnViewSource(wxCommandEvent& event);
     void OnMapOutput(wxCommandEvent& event);
     void OnBuildOutput(wxCommandEvent& event);
+    void OnSaveOutput(wxCommandEvent& event);
+    void OnViewOutput(wxCommandEvent& event);
 
 private:
     std::string FindClosest(RgbValue value);
@@ -93,12 +94,12 @@ private:
     wxFileConfig* mConfig;
 
     std::mutex mImportMutex;
-    std::list<std::string> mImportFileList;
+    std::vector<std::string> mImportFileList;
 
     std::mutex mBuildMutex;
-    std::list<std::tuple<int, int, RgbValue>> mBuildInputList;
-    std::map<std::string, std::list<std::tuple<int, int>>> mBuildTileMap;
-    std::list<BuildTile> mBuildTileList;
+    std::vector<std::tuple<int, int, RgbValue>> mBuildInputList;
+    std::map<std::string, std::vector<std::tuple<int, int>>> mBuildTileMap;
+    std::vector<BuildTile> mBuildTileList;
 
     wxArrayString mFileList;
     wxArrayString mImportList;
@@ -110,5 +111,6 @@ private:
     Mat mOutputMat;
     int mOutputScale;
     int mUpdatedOutput;
+    int mThreshold;
 };
 

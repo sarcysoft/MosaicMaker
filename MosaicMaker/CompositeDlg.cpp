@@ -27,6 +27,12 @@ CompositeDlg::CompositeDlg(wxArrayString fileList)
     wxButton* btnBuildOutput = new wxButton(panel, ID_BuildOutput, wxT("Build Output"));
     hbox1->Add(btnBuildOutput);
 
+    wxButton* btnSaveOutput = new wxButton(panel, ID_BuildOutput, wxT("Save Output"));
+    hbox1->Add(btnSaveOutput);
+
+    wxButton* btnViewOutput = new wxButton(panel, ID_ViewOutput, wxT("View Output"));
+    hbox1->Add(btnViewOutput);
+
     vbox1->Add(hbox1, 0, wxALIGN_LEFT | wxLEFT | wxRIGHT | wxTOP | wxBOTTOM, 5);
 
 
@@ -46,6 +52,8 @@ CompositeDlg::CompositeDlg(wxArrayString fileList)
     Bind(wxEVT_BUTTON, &CompositeDlg::OnViewSource, this, ID_ViewSource);
     Bind(wxEVT_BUTTON, &CompositeDlg::OnMapOutput, this, ID_MapOutput);
     Bind(wxEVT_BUTTON, &CompositeDlg::OnBuildOutput, this, ID_BuildOutput);
+    Bind(wxEVT_BUTTON, &CompositeDlg::OnSaveOutput, this, ID_SaveOutput);
+    Bind(wxEVT_BUTTON, &CompositeDlg::OnViewOutput, this, ID_ViewOutput);
 
     SetFileList(fileList);
 
@@ -57,6 +65,7 @@ CompositeDlg::CompositeDlg(wxArrayString fileList)
     }
 
     mOutputScale = 16;
+    mThreshold = 1000;
 }
 
 void CompositeDlg::SetFileList(wxArrayString fileList)
@@ -169,9 +178,15 @@ void CompositeDlg::OnViewSource(wxCommandEvent& event)
         Mat image;
         image = imread(mFileList[0].ToStdString(), IMREAD_COLOR);
 
-        namedWindow("Source Image", WINDOW_AUTOSIZE);
+        namedWindow("Source Image", WINDOW_NORMAL);
         imshow("Source Image", image);
     }
+}
+
+void CompositeDlg::OnViewOutput(wxCommandEvent& event)
+{
+    namedWindow("Output Image", WINDOW_NORMAL);
+    imshow("Output Image", mOutputMat);
 }
 
 
@@ -205,7 +220,7 @@ std::string CompositeDlg::FindClosest(RgbValue value)
 
         int dist = (rr * rr) + (gg * gg) + (bb * bb);
 
-        if (dist < 500)
+        if (dist < mThreshold)
         {
             bestSet.push_back(it->first);
         }
@@ -240,8 +255,8 @@ void CompositeDlg::MapOutput(std::string filename)
     Mat image;
     image = imread(filename, IMREAD_COLOR);
 
-    double scaleX = (double)image.cols / 300.0;
-    double scaleY = (double)image.rows / 300.0;
+    double scaleX = (double)image.cols / 600.0;
+    double scaleY = (double)image.rows / 600.0;
     double scale = (scaleX > scaleY) ? scaleX : scaleY;
 
     int sizeX = (int)((double)image.cols / scale);
@@ -251,6 +266,9 @@ void CompositeDlg::MapOutput(std::string filename)
 
     //mOutputMat = Mat3d(image.rows * mOutputScale, image.cols * mOutputScale);
     resize(image, mOutputMat, Size(sizeX * mOutputScale, sizeY * mOutputScale), 0, 0, INTER_AREA);
+
+    cvtColor(mOutputMat, mOutputMat, COLOR_BGR2GRAY);
+    cvtColor(mOutputMat, mOutputMat, COLOR_GRAY2BGR);
 
     for (int y = 0; y < image.rows; y++)
     {
@@ -267,6 +285,7 @@ void CompositeDlg::MapOutput(std::string filename)
     mProgressBar->SetValue(0);
 
     mBuildTileMap.clear();
+    mUpdatedOutput = 0;
 
     int threads = wxThread::GetCPUCount() - 1;
     threads = (threads > 0) ? threads : 1;
@@ -302,8 +321,8 @@ void CompositeDlg::MapThread()
         int y = std::get<1>(value);
         std::string filename = FindClosest(std::get<2>(value));
 
+#if true
         int progress = (100 * (count - mBuildInputList.size())) / count;
-
         mProgressBar->SetValue(progress);
 
         mBuildMutex.lock();
@@ -313,14 +332,37 @@ void CompositeDlg::MapThread()
             mBuildTileMap[filename] = {};
         }
         mBuildTileMap[filename].push_back(std::make_tuple(x, y));
+#else
+        Mat image = LoadMat(filename, mOutputScale);
+
+        Mat dstRoi = mOutputMat(Rect(x * mOutputScale, y * mOutputScale, mOutputScale, mOutputScale));
+        image.copyTo(dstRoi);
+
+        mUpdatedOutput++;
+        if ((mUpdatedOutput > 50) || mBuildTileList.empty())
+        {
+            mUpdatedOutput = 0;
+
+            mOutputMutex.lock();
+            mOutputPanel->SetNewImage(mOutputMat);
+            mOutputMutex.unlock();
+        }
+
+        int progress = (100 * (count - mBuildInputList.size())) / count;
+        mProgressBar->SetValue(progress);
+
+        mBuildMutex.lock();
+#endif
     }
 
     mBuildMutex.unlock();
 }
 
+bool TileSortFunc(BuildTile i, BuildTile j) { return (i.coords.size() <  j.coords.size()); }
+
 void CompositeDlg::OnBuildOutput(wxCommandEvent& event)
 {
-    for (std::map<std::string, std::list<std::tuple<int, int>>>::const_iterator it = mBuildTileMap.begin(); it != mBuildTileMap.end(); ++it)
+    for (std::map<std::string, std::vector<std::tuple<int, int>>>::const_iterator it = mBuildTileMap.begin(); it != mBuildTileMap.end(); ++it)
     {
         BuildTile tile;
         tile.filename = it->first;
@@ -328,7 +370,10 @@ void CompositeDlg::OnBuildOutput(wxCommandEvent& event)
         mBuildTileList.push_back(tile);
     }
 
+    std::sort(mBuildTileList.begin(), mBuildTileList.end(), TileSortFunc);
+
     mProgressBar->SetValue(0);
+    mOutputPanel->SetNewImage(mOutputMat);
 
     mUpdatedOutput = 0;
 
@@ -375,11 +420,7 @@ void CompositeDlg::BuildOutputThread()
             Mat dstRoi = mOutputMat(Rect(x * mOutputScale, y * mOutputScale, mOutputScale, mOutputScale));
             image.copyTo(dstRoi);
         }
-
-        int progress = (100 * (count - mBuildTileList.size())) / count;
-
-        mProgressBar->SetValue(progress);
-        
+       
         mUpdatedOutput++;
         if ((mUpdatedOutput > 50) || mBuildTileList.empty())
         {
@@ -388,12 +429,18 @@ void CompositeDlg::BuildOutputThread()
             mOutputMutex.lock();
             mOutputPanel->SetNewImage(mOutputMat);
             mOutputMutex.unlock();
+
+            int progress = (100 * (count - mBuildTileList.size())) / count;
+            mProgressBar->SetValue(progress);
         }
      
         mBuildMutex.lock();
     }
 
     mBuildMutex.unlock();
+}
 
-//    mOutputPanel->SetNewImage(mOutputMat);
+void CompositeDlg::OnSaveOutput(wxCommandEvent& event)
+{
+    imwrite("composite.png", mOutputMat);
 }
